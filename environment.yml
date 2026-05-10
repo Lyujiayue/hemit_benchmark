@@ -1,0 +1,47 @@
+# HEMIT Benchmark Environment Configuration
+name: hemit_benchmark
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    # PyTorch (CUDA 12.1)
+    - torch==2.2.0
+    - torchvision==0.17.0
+    - torchaudio==2.2.0
+
+    # Scientific computing
+    - numpy==1.26.3
+    - scipy==1.12.0
+    - pandas==2.1.4
+
+    # Image processing
+    - scikit-image==0.22.0
+    - imageio==2.33.1
+    - imageio-ffmpeg==0.4.9
+    - pillow==10.2.0
+    - opencv-python==4.9.0.80
+
+    # Deep learning utilities
+    - einops==0.7.0
+    - tifffile==2024.1.30
+    - imagehash==4.3.1
+
+    # Logging and visualization
+    - tensorboard==2.15.1
+    - wandb==0.16.2
+    - matplotlib==3.8.2
+    - seaborn==0.13.1
+
+    # Jupyter
+    - jupyterlab==4.0.11
+    - ipykernel==6.28.0
+
+    # Development
+    - black==24.1.1
+    - flake8==7.0.0
+    - pytest==7.4.4

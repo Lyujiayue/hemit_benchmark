@@ -1,0 +1,43 @@
+# ============================================================================
+# Pix2pix + UNet Configuration
+# Classic Conditional GAN Baseline
+# ============================================================================
+# Based on: Isola et al., CVPR 2017
+# Metrics reported in HEMIT paper: SSIM, Pearson R, PSNR
+
+model:
+  generator:
+    arch: unet          # unet, resnet, swintresnet
+    input_nc: 1         # Grayscale H&E input
+    output_nc: 3        # DAPI, panCK, CD3 channels
+    ngf: 64             # Number of generator filters
+
+  discriminator:
+    ndf: 64             # Number of discriminator filters
+    n_layers: 3         # PatchGAN layers
+    patchgan: true
+
+data:
+  num_workers: 4
+  patch_size: null      # null = full 1024x1024 patches
+  use_augmentation: true
+
+training:
+  batch_size: 2        # Limited by 1024x1024 images
+  num_epochs: 100
+  val_freq: 5
+  save_freq: 10
+  lambda_L1: 100.0      # Weight for L1 loss
+  seed: 42
+
+optimizer:
+  lr: 0.0002            # 2e-4
+  beta1: 0.5
+  beta2: 0.999
+
+scheduler:
+  policy: step          # step, linear
+  step_size: 50
+  gamma: 0.5
+
+exp_dir: experiments

@@ -1,0 +1,48 @@
+# ============================================================================
+# Dual-Branch Pix2pix (HEMIT Paper Method)
+# ============================================================================
+# Based on: Bian et al., arXiv:2403.18501
+# Architecture: Dual-branch encoder + shared decoder + channel attention
+# Original training command:
+#   python train.py --dataroot ./datasets/hemit/ --name hemit_dual_branch
+#     --model pix2pix --direction AtoB --lr 0.00003 --lambda_L1 30
+#     --netG SwinTResnet --n_epochs 50 --n_epochs_decay 30 --batch_size 2
+# ============================================================================
+
+model:
+  generator:
+    arch: dual_branch   # Custom dual-branch architecture
+    input_nc: 1         # Grayscale H&E input
+    output_nc: 3        # DAPI, panCK, CD3 channels
+    ngf: 64
+
+  discriminator:
+    ndf: 64
+    n_layers: 3
+    patchgan: true
+
+data:
+  num_workers: 4
+  patch_size: null
+  use_augmentation: true
+
+training:
+  batch_size: 2         # Matches original paper
+  num_epochs: 80        # 50 + 30 decay = 80 total
+  val_freq: 5
+  save_freq: 10
+  lambda_L1: 30.0       # Matches original paper
+  seed: 42
+
+optimizer:
+  lr: 0.00003           # 3e-5, as per original paper
+  beta1: 0.5
+  beta2: 0.999
+
+scheduler:
+  policy: step          # Step decay
+  step_size: 30         # Match n_epochs_decay
+  gamma: 0.1            # Decay factor
+
+exp_dir: experiments
+checkpoint_url: "https://drive.google.com/file/d/1HNc-dj2ATN7gdAyOCy-lWe8_YQse2CTd/view?usp=sharing"

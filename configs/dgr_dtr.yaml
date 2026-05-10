@@ -1,0 +1,52 @@
+# ============================================================================
+# DGR/DTR (DTR-style with Per-Channel Discriminators)
+# Misalignment-Resistant Virtual Staining
+# ============================================================================
+# Based on: Ma et al., arXiv:2509.14119
+# Architecture: DTRGenerator with dual discriminators (global + per-channel)
+# Pretrained HEMIT weights:
+#   https://github.com/birkhoffkiki/DTR/releases/download/weights/hemit_weight.pth
+# ============================================================================
+
+model:
+  generator:
+    arch: dgr_dtr        # DTRGenerator from dgr_dtr.py
+    input_nc: 1         # Grayscale H&E
+    output_nc: 3        # DAPI, panCK, CD3
+    ngf: 64
+    num_resblocks: 9
+    use_attention: true
+
+  discriminator:
+    ndf: 64
+    num_layers: 3
+
+  # Loss weights
+  lambda_L1: 100.0
+  lambda_perceptual: 10.0
+
+data:
+  num_workers: 4
+  patch_size: null
+  use_augmentation: true
+
+training:
+  batch_size: 2
+  num_epochs: 100
+  val_freq: 5
+  save_freq: 10
+  seed: 42
+
+optimizer:
+  lr: 0.0002
+  beta1: 0.5
+  beta2: 0.999
+
+scheduler:
+  policy: step
+  step_size: 50
+  gamma: 0.5
+
+exp_dir: experiments
+pretrained:
+  hemit_url: "https://github.com/birkhoffkiki/DTR/releases/download/weights/hemit_weight.pth"
