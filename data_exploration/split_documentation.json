@@ -1,0 +1,54 @@
+{
+  "description": "HEMIT dataset splits as used in the original HEMIT paper",
+  "random_seed": 42,
+  "splits": {
+    "train": {
+      "num_samples": 3717,
+      "sample_ids": [
+        "[10358,37400]_patch_0_0.tif",
+        "[10358,37400]_patch_0_1.tif",
+        "[10358,37400]_patch_0_2.tif",
+        "[10358,37400]_patch_0_3.tif",
+        "[10358,37400]_patch_0_4.tif",
+        "[10358,37400]_patch_0_5.tif",
+        "[10358,37400]_patch_0_6.tif",
+        "[10358,37400]_patch_0_7.tif",
+        "[10358,37400]_patch_0_8.tif",
+        "[10358,37400]_patch_1_0.tif"
+      ],
+      "total_files": 3717
+    },
+    "val": {
+      "num_samples": 630,
+      "sample_ids": [
+        "[12146,53552]_patch_0_0.tif",
+        "[12146,53552]_patch_0_1.tif",
+        "[12146,53552]_patch_0_2.tif",
+        "[12146,53552]_patch_0_3.tif",
+        "[12146,53552]_patch_0_4.tif",
+        "[12146,53552]_patch_0_5.tif",
+        "[12146,53552]_patch_0_6.tif",
+        "[12146,53552]_patch_0_7.tif",
+        "[12146,53552]_patch_0_8.tif",
+        "[12146,53552]_patch_1_0.tif"
+      ],
+      "total_files": 630
+    },
+    "test": {
+      "num_samples": 945,
+      "sample_ids": [
+        "[10382,50252]_patch_0_0.tif",
+        "[10382,50252]_patch_0_1.tif",
+        "[10382,50252]_patch_0_2.tif",
+        "[10382,50252]_patch_0_3.tif",
+        "[10382,50252]_patch_0_4.tif",
+        "[10382,50252]_patch_0_5.tif",
+        "[10382,50252]_patch_0_6.tif",
+        "[10382,50252]_patch_0_7.tif",
+        "[10382,50252]_patch_0_8.tif",
+        "[10382,50252]_patch_1_0.tif"
+      ],
+      "total_files": 945
+    }
+  }
+}

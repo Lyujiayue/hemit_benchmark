@@ -141,7 +141,7 @@ def generate_visualizations(
         input_files = sorted(list(input_dir.glob('*.tif')))
         selected_files = random.sample(input_files, min(num_samples, len(input_files)))
 
-        fig, axes = plt.subplots(num_samples, 3, figsize=(12, 4 * num_samples))
+        fig, axes = plt.subplots(num_samples, 5, figsize=(20, 4 * num_samples))
 
         if num_samples == 1:
             axes = axes.reshape(1, -1)
@@ -181,9 +181,9 @@ def generate_visualizations(
             for c_idx, channel_name in enumerate(channel_names):
                 channel = label_img[:, :, c_idx]
                 channel_norm = (channel - channel.min()) / (channel.max() - channel.min() + 1e-8)
-                axes[idx, 2].imshow(channel_norm, cmap='gray' if c_idx != 0 else 'viridis')
-                axes[idx, 2].set_title(f'{channel_name} channel')
-                axes[idx, 2].axis('off')
+                axes[idx, 2 + c_idx].imshow(channel_norm, cmap='gray' if c_idx != 0 else 'viridis')
+                axes[idx, 2 + c_idx].set_title(f'{channel_name} channel')
+                axes[idx, 2 + c_idx].axis('off')
 
         plt.tight_layout()
         plt.savefig(output_dir / f'visualization_{split}.png', dpi=150, bbox_inches='tight')

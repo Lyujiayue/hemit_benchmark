@@ -1,0 +1,22 @@
+============================================================
+HEMIT Dataset Integrity Report
+============================================================
+
+TRAIN Split:
+  Total samples: 3717
+  Valid samples: 3717
+  Invalid samples: 0
+
+VAL Split:
+  Total samples: 630
+  Valid samples: 630
+  Invalid samples: 0
+
+TEST Split:
+  Total samples: 945
+  Valid samples: 945
+  Invalid samples: 0
+
+============================================================
+Total: 5292/5292 valid samples
+============================================================
