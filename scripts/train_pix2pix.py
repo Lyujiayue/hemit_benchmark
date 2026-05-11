@@ -27,7 +27,8 @@ from tqdm import tqdm
 import yaml
 import json
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from models.baselines.pix2pix import (
     create_generator, create_discriminator
@@ -235,7 +236,7 @@ class Pix2pixTrainer:
         self.optimizerG.step()
 
         losses = {}
-        for k, v in {**D_losses, **G_losses}:
+        for k, v in {**D_losses, **G_losses}.items():
             losses[k] = float(v.item())
 
         return losses
@@ -300,7 +301,7 @@ class Pix2pixTrainer:
             return t
 
         # H&E input: use first channel
-        input_grid = vutils.make_grid(norm(input_vis[:, :1]), nrow=num_vis, normalize=True)
+        input_grid = vutils.make_grid(norm(input_vis), nrow=num_vis, normalize=True)
         fake_grid = vutils.make_grid(norm(fake_vis), nrow=num_vis, normalize=True)
         real_grid = vutils.make_grid(norm(real_vis), nrow=num_vis, normalize=True)
 
@@ -309,7 +310,7 @@ class Pix2pixTrainer:
         self.writer.add_image('Val/Real_mIHC', real_grid, step)
 
         # Side-by-side comparison
-        comp = torch.cat([norm(input_vis[:, :1]), norm(fake_vis), norm(real_vis)], dim=3)
+        comp = torch.cat([norm(input_vis), norm(fake_vis), norm(real_vis)], dim=3)
         comp_grid = vutils.make_grid(comp, nrow=1, normalize=True)
         self.writer.add_image('Val/Comparison_H_E_Fake_Real', comp_grid, step)
 
@@ -351,7 +352,7 @@ class Pix2pixTrainer:
 
         best_metric = -float('inf')
 
-        for epoch in range(1, num_epochs + 1):
+        for epoch in range(self.current_epoch + 1, num_epochs + 1):
             self.current_epoch = epoch
             self.netG.train()
             self.netD.train()

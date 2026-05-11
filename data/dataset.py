@@ -163,11 +163,9 @@ class HEMITDataset(Dataset):
         input_img = self._normalize(input_img)
         label_img = self._normalize(label_img)
 
-        # Apply custom transforms
+        # Apply joint custom transforms (prevents spatial mismatch)
         if self.transform:
-            input_img = self.transform(input_img)
-        if self.target_transform:
-            label_img = self.target_transform(label_img)
+            input_img, label_img = self.transform(input_img, label_img)
 
         # Convert to tensor format
         input_tensor = self._to_tensor(input_img.copy())
@@ -227,11 +225,7 @@ def create_data_loaders(
     # Define transforms
     train_transform = None
     if use_augmentation:
-        train_transform = transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomVerticalFlip(),
-            transforms.RandomRotation(degrees=90),
-        ])
+        train_transform = JointRandomAugmentation(p=0.5)
 
     # Create datasets
     train_dataset = HEMITDataset(
@@ -418,21 +412,25 @@ class HEMITDataValidator:
 
 
 # Augmentation transforms
-class RandomAugmentation:
-    """Random augmentation for training"""
+class JointRandomAugmentation:
+    """Joint random augmentation for matched image pairs (Input & Label)"""
 
     def __init__(self, p: float = 0.5):
         self.p = p
 
-    def __call__(self, img: np.ndarray) -> np.ndarray:
+    def __call__(self, img1: np.ndarray, img2: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         if np.random.random() < self.p:
             # Random horizontal flip
             if np.random.random() < 0.5:
-                img = np.fliplr(img)
+                img1 = np.fliplr(img1)
+                img2 = np.fliplr(img2)
             # Random vertical flip
             if np.random.random() < 0.5:
-                img = np.flipud(img)
+                img1 = np.flipud(img1)
+                img2 = np.flipud(img2)
             # Random 90-degree rotation
             k = np.random.randint(0, 4)
-            img = np.rot90(img, k)
-        return img.copy()
+            if k > 0:
+                img1 = np.rot90(img1, k)
+                img2 = np.rot90(img2, k)
+        return img1.copy(), img2.copy()

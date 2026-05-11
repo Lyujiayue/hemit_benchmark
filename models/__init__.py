@@ -1,13 +1,13 @@
-from .pix2pix import (
+from .baselines.pix2pix import (
     create_generator, create_discriminator,
     UNetGenerator, ResNetGenerator, SwinTResNetGenerator,
     NLayerDiscriminator, PixelDiscriminator
 )
-from .dual_branch import (
+from .baselines.dual_branch import (
     DualBranchGenerator, DualBranchDiscriminator,
     create_dual_branch_generator
 )
-from .dgr import (
+from .advanced.dgr import (
     DGRGenerator, DGRDiscriminator,
     create_dgr_generator, DGRInferencePipeline, DGRLossCalculator
 )

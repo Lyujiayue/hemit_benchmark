@@ -3,6 +3,7 @@ HEMIT Evaluation Metrics Module
 
 Computes SSIM, Pearson Correlation, and PSNR for mIHC image translation evaluation.
 """
+import torch
 import os
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
