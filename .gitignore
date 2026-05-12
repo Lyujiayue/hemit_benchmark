@@ -2,3 +2,8 @@ experiments/
 checkpoints/
 data/
 *.pth
+experiments/
+*.pth
+data/HEMIT/
+__pycache__/
+.ipynb_checkpoints/
