@@ -11,7 +11,7 @@
 model:
   generator:
     arch: dgr_dtr        # DTRGenerator from dgr_dtr.py
-    input_nc: 1         # Grayscale H&E
+    input_nc:  3         # Grayscale H&E
     output_nc: 3        # DAPI, panCK, CD3
     ngf: 64
     num_resblocks: 9
@@ -27,11 +27,12 @@ model:
 
 data:
   num_workers: 4
-  patch_size: null
+  # patch_size: null
+  patch_size: 256
   use_augmentation: true
 
 training:
-  batch_size: 2
+  batch_size: 4
   num_epochs: 100
   val_freq: 5
   save_freq: 10

@@ -40,7 +40,7 @@ class AttentionBlock(nn.Module):
         phi = F.softmax(phi, dim=-1)
 
         g = self.g(x).view(batch_size, C // 2, H * W)
-        g = F.softmax(g, dim=-1)
+        # g = F.softmax(g, dim=-1)
 
         # Attention map
         attention = torch.bmm(theta.transpose(1, 2), phi)
@@ -168,6 +168,10 @@ class DTRGenerator(nn.Module):
             nn.ReLU(True),
             nn.Linear(256, 6)  # 6 parameters for 2D affine transformation
         )
+        self.offset_predictor[-1].weight.data.zero_()
+        self.offset_predictor[-1].bias.data.copy_(
+            torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float)
+        )
 
     def forward(self, x: torch.Tensor, return_offset: bool = False) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         # Input encoding
@@ -291,7 +295,7 @@ class DGRDiscriminator(nn.Module):
 
         global_disc += [
             nn.Conv2d(ndf * nf_mult, 1, kernel_size=kw, stride=1, padding=padw),
-            nn.Sigmoid()
+            # nn.Sigmoid()
         ]
 
         self.global_discriminator = nn.Sequential(*global_disc)
@@ -305,7 +309,7 @@ class DGRDiscriminator(nn.Module):
                 norm_fn(ndf),
                 nn.LeakyReLU(0.2, True),
                 nn.Conv2d(ndf, 1, kernel_size=4, stride=1, padding=1),
-                nn.Sigmoid()
+                # nn.Sigmoid()
             ) for _ in range(3)  # DAPI, panCK, CD3
         ])
 
@@ -441,7 +445,7 @@ class DGRLoss(nn.Module):
 
             # GAN loss
             loss_G_global = self.compute_gan_loss(
-                pred_fake_global, None, is_discriminator=False
+                None, pred_fake_global, is_discriminator=False
             )
             loss_G_channels = 0.0
             for i in range(3):
@@ -459,7 +463,11 @@ class DGRLoss(nn.Module):
             # Channel consistency
             loss_consistency = self.compute_channel_consistency_loss(fake_B, real_B)
 
-            losses['loss_G'] = loss_G_global + loss_G_channels + loss_L1
+            losses['loss_G'] = (loss_G_global + 
+                                loss_G_channels + 
+                                loss_L1 + 
+                                loss_perceptual + 
+                                loss_consistency)
             losses['loss_L1'] = loss_L1
             losses['loss_perceptual'] = loss_perceptual
             losses['loss_consistency'] = loss_consistency
