@@ -336,7 +336,9 @@ class HEMITTrainer:
         best_metric = -float('inf')
         loss_keys = ['loss_G', 'loss_G_GAN', 'loss_G_L1', 'loss_D', 'loss_D_real', 'loss_D_fake']
 
-        for epoch in range(1, num_epochs + 1):
+        start_epoch = self.current_epoch + 1
+
+        for epoch in range(start_epoch, num_epochs + 1):
             self.current_epoch = epoch
             self.netG.train()
             self.netD.train()

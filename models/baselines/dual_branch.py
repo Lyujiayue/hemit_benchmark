@@ -148,64 +148,69 @@ class DualBranchDecoder(nn.Module):
     """
     Dual-branch decoder with skip connections.
     Upsamples latent features back to full resolution.
+    (Fixed channel dimensions for skip connection concatenation)
     """
 
     def __init__(self, ngf: int = 64, output_nc: int = 3):
         super().__init__()
 
-        # Upsample blocks
+        # up1 receive 512 channel -> outputs 256 channel
         self.up1 = nn.Sequential(
             nn.ConvTranspose2d(ngf * 8, ngf * 4, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.InstanceNorm2d(ngf * 4),
             nn.ReLU(inplace=True)
         )
 
+        # x(256) + skip4(512) = 768 up2 must receive 768 channel
         self.up2 = nn.Sequential(
-            nn.ConvTranspose2d(ngf * 8, ngf * 2, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(ngf * 4 + ngf * 8, ngf * 2, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.InstanceNorm2d(ngf * 2),
             nn.ReLU(inplace=True)
         )
 
+        # x(128) + skip3(256) = 384 up3 must receive 384 channel
         self.up3 = nn.Sequential(
-            nn.ConvTranspose2d(ngf * 4, ngf, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(ngf * 2 + ngf * 4, ngf, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.InstanceNorm2d(ngf),
             nn.ReLU(inplace=True)
         )
 
+        # x(64) + skip2(128) = 192 up4 must receive 192 channel
         self.up4 = nn.Sequential(
-            nn.ConvTranspose2d(ngf * 2, ngf, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(ngf + ngf * 2, ngf, kernel_size=3, stride=2, padding=1, output_padding=1),
             nn.InstanceNorm2d(ngf),
             nn.ReLU(inplace=True)
         )
 
-        # Output conv
+        # x(64) + skip1(64) = 128 outc must receive 128 channel
         self.outc = nn.Sequential(
             nn.ReflectionPad2d(3),
-            nn.Conv2d(ngf, output_nc, kernel_size=7, stride=1, padding=0),
+            nn.Conv2d(ngf + ngf, output_nc, kernel_size=7, stride=1, padding=0),
             nn.Tanh()
         )
 
     def forward(
         self,
         x: torch.Tensor,
-        skip1: torch.Tensor,
-        skip2: torch.Tensor,
-        skip3: torch.Tensor,
-        skip4: torch.Tensor
+        skip1: torch.Tensor, # Receive Encoder skips[0] (64ch)
+        skip2: torch.Tensor, # Receive Encoder skips[1] (128ch)
+        skip3: torch.Tensor, # Receive Encoder skips[2] (256ch)
+        skip4: torch.Tensor  # Receive Encoder skips[3] (512ch)
     ) -> torch.Tensor:
-        x = self.up1(x)
-        x = torch.cat([x, skip4], dim=1)
+        
+        x = self.up1(x)                     # 512 -> 256
+        x = torch.cat([x, skip4], dim=1)    # 256 + 512 = 768
 
-        x = self.up2(x)
-        x = torch.cat([x, skip3], dim=1)
+        x = self.up2(x)                     # 768 -> 128
+        x = torch.cat([x, skip3], dim=1)    # 128 + 256 = 384
 
-        x = self.up3(x)
-        x = torch.cat([x, skip2], dim=1)
+        x = self.up3(x)                     # 384 -> 64
+        x = torch.cat([x, skip2], dim=1)    # 64 + 128 = 192
 
-        x = self.up4(x)
-        x = torch.cat([x, skip1], dim=1)
+        x = self.up4(x)                     # 192 -> 64
+        x = torch.cat([x, skip1], dim=1)    # 64 + 64 = 128
 
-        x = self.outc(x)
+        x = self.outc(x)                    # 128 -> 3
         return x
 
 

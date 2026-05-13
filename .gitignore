@@ -7,3 +7,5 @@ experiments/
 data/HEMIT/
 __pycache__/
 .ipynb_checkpoints/
+*.pth
+autodl-tmp/

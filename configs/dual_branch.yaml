@@ -12,7 +12,7 @@
 model:
   generator:
     arch: dual_branch   # Custom dual-branch architecture
-    input_nc: 1         # Grayscale H&E input
+    input_nc: 3         # Grayscale H&E input
     output_nc: 3        # DAPI, panCK, CD3 channels
     ngf: 64
 
@@ -27,7 +27,7 @@ data:
   use_augmentation: true
 
 training:
-  batch_size: 2         # Matches original paper
+  batch_size: 4         # Matches original paper
   num_epochs: 80        # 50 + 30 decay = 80 total
   val_freq: 5
   save_freq: 10
