@@ -72,22 +72,6 @@ class DTRTrainer:
     def train_step(self, input_img: torch.Tensor, label_img: torch.Tensor) -> Dict[str, float]:
         outputs = self.model(real_A=input_img, real_B=label_img, training=True)
         # ==========================================
-        # [监控补丁] 观察 STN 是否坍塌
-        # ==========================================
-        if self.global_step % 100 == 0:
-            # 从 outputs 中提取 pred_fake_global 只是为了触发，
-            # 我们直接去 model 的 generator 里抓那个刚算完的 offset
-            with torch.no_grad():
-                # 获取当前 Batch 的第一个仿射矩阵
-                # self.model -> DGRModel, .generator -> DTRGenerator
-                # 注意：你可能需要确保 DTRGenerator 的 forward 存下了最后的 offset
-                # 简单做法是直接去取 predictor 的输出（这不需要修改 forward 接口）
-                
-                # 拿到最后一次推理的 offset
-                theta = self.model.generator.offset_predictor[-1].bias.data # 先看偏置项
-                print(f"\n[STN Check] Step {self.global_step} | Affine Bias: {theta.cpu().numpy().round(3)}")
-                # 正常的偏置应该是 [1, 0, 0, 0, 1, 0] 附近
-        # ==========================================
         # Core Fix: Update Generator first, then update Discriminator
         # to avoid in-place operation version mismatch.
         # ==========================================
@@ -159,6 +143,12 @@ class DTRTrainer:
         self.writer.add_image('val/input_HE', inp_grid, step)
         self.writer.add_image('val/fake_mIHC', fake_grid, step)
         self.writer.add_image('val/real_mIHC', real_grid, step)
+
+        # 在 visualize_batch 结尾加上这三行
+        
+        vutils.save_image(inp_grid, self.vis_dir / f'epoch_{step:04d}_input.png')
+        vutils.save_image(fake_grid, self.vis_dir / f'epoch_{step:04d}_fake.png')
+        vutils.save_image(real_grid, self.vis_dir / f'epoch_{step:04d}_real.png')
 
     def load_checkpoint(self, ckpt_path: str):
         """修复：恢复断点续传核心逻辑"""

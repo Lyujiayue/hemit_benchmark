@@ -19,42 +19,57 @@ import math
 
 
 class AttentionBlock(nn.Module):
-    """Self-attention block for capturing long-range dependencies"""
+    """
+    Standard Self-Attention block for capturing long-range dependencies.
+    Refactored to use Scaled Dot-Product Attention for numerical stability (prevents NaN).
+    """
 
     def __init__(self, channels: int):
         super(AttentionBlock, self).__init__()
 
         self.channels = channels
-        self.theta = nn.Conv2d(channels, channels // 8, kernel_size=1)
-        self.phi = nn.Conv2d(channels, channels // 8, kernel_size=1)
-        self.g = nn.Conv2d(channels, channels // 2, kernel_size=1)
-        self.o = nn.Conv2d(channels // 2, channels, kernel_size=1)
+        # Linear projections for Query, Key, and Value
+        self.theta = nn.Conv2d(channels, channels // 8, kernel_size=1)  # Query
+        self.phi = nn.Conv2d(channels, channels // 8, kernel_size=1)    # Key
+        self.g = nn.Conv2d(channels, channels // 2, kernel_size=1)      # Value
+        self.o = nn.Conv2d(channels // 2, channels, kernel_size=1)      # Output projection
+        
+        # Learnable scale parameter for the residual connection
         self.gamma = nn.Parameter(torch.tensor(0.0))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         batch_size, C, H, W = x.size()
 
-        # Compute attention
-        theta = self.theta(x).view(batch_size, C // 8, H * W)
-        phi = self.phi(x).view(batch_size, C // 8, H * W)
-        phi = F.softmax(phi, dim=-1)
+        # 1. Extract Query, Key, Value and reshape them to [B, C, N] where N = H * W
+        query = self.theta(x).view(batch_size, self.channels // 8, -1)
+        key = self.phi(x).view(batch_size, self.channels // 8, -1)
+        value = self.g(x).view(batch_size, self.channels // 2, -1)
 
-        g = self.g(x).view(batch_size, C // 2, H * W)
-        # g = F.softmax(g, dim=-1)
+        # 2. Compute Scaled Dot-Product Energy Map
+        # query.transpose(1, 2) is [B, N, C']
+        # key is [B, C', N]
+        # bmm output: [B, N, N]
+        scale_factor = math.sqrt(self.channels // 8)
+        energy = torch.bmm(query.transpose(1, 2), key) / scale_factor
 
-        # Attention map
-        attention = torch.bmm(theta.transpose(1, 2), phi)
-        attention = attention.view(batch_size, H * W, H * W)
+        # 3. Apply Softmax to get normalized attention weights
+        # dim=-1 ensures that attention weights for each query sum to 1
+        attention = F.softmax(energy, dim=-1)
 
-        # Apply attention
-        g = torch.bmm(g, attention.transpose(1, 2))
-        g = g.view(batch_size, C // 2, H, W)
+        # 4. Multiply Attention Weights with Values
+        # value is [B, C'', N]
+        # attention.transpose(1, 2) is [B, N, N]
+        # bmm output: [B, C'', N]
+        out = torch.bmm(value, attention.transpose(1, 2))
 
-        o = self.o(g)
-        out = self.gamma * o + x
+        # 5. Reshape back to 2D spatial format [B, C'', H, W]
+        out = out.view(batch_size, self.channels // 2, H, W)
+        
+        # 6. Apply final output convolution
+        out = self.o(out)
 
-        return out
-
+        # 7. Residual connection
+        return self.gamma * out + x
 
 class ResidualBlock(nn.Module):
     """Residual block with optional attention"""

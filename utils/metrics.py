@@ -256,14 +256,25 @@ class MetricsCalculator:
     def aggregate_metrics(self, image_metrics: List[ImageMetrics]) -> AggregateMetrics:
         """
         Aggregate metrics across all images.
-
-        Args:
-            image_metrics: List of ImageMetrics objects
-
-        Returns:
-            AggregateMetrics object with mean and std for each metric
+        Safely handles NaN and INF values caused by empty/blank image patches.
         """
         num_samples = len(image_metrics)
+
+        # ---------------------------------------------------------
+        # [安全补丁] 定义过滤 nan 和 inf 的计算函数
+        # 这样可以确保如果遇到全黑图导致的脏数据，自动跳过它计算剩余图的均值
+        # ---------------------------------------------------------
+        def safe_mean(vals):
+            arr = np.array(vals, dtype=np.float64)
+            arr[np.isinf(arr)] = np.nan  # 将所有的无穷大转换为 nan
+            # 如果全是 nan (极端情况)，返回 0，否则返回忽略 nan 后的平均值
+            return float(np.nanmean(arr)) if not np.all(np.isnan(arr)) else 0.0
+
+        def safe_std(vals):
+            arr = np.array(vals, dtype=np.float64)
+            arr[np.isinf(arr)] = np.nan
+            return float(np.nanstd(arr)) if not np.all(np.isnan(arr)) else 0.0
+        # ---------------------------------------------------------
 
         # Extract individual metrics
         dapi_ssim = [m.dapi.ssim for m in image_metrics]
@@ -283,18 +294,18 @@ class MetricsCalculator:
 
         return AggregateMetrics(
             num_samples=num_samples,
-            dapi_ssim_mean=np.mean(dapi_ssim), dapi_ssim_std=np.std(dapi_ssim),
-            panck_ssim_mean=np.mean(panck_ssim), panck_ssim_std=np.std(panck_ssim),
-            cd3_ssim_mean=np.mean(cd3_ssim), cd3_ssim_std=np.std(cd3_ssim),
-            average_ssim_mean=np.mean(avg_ssim), average_ssim_std=np.std(avg_ssim),
-            dapi_pearson_mean=np.mean(dapi_pearson), dapi_pearson_std=np.std(dapi_pearson),
-            panck_pearson_mean=np.mean(panck_pearson), panck_pearson_std=np.std(panck_pearson),
-            cd3_pearson_mean=np.mean(cd3_pearson), cd3_pearson_std=np.std(cd3_pearson),
-            average_pearson_mean=np.mean(avg_pearson), average_pearson_std=np.std(avg_pearson),
-            dapi_psnr_mean=np.mean(dapi_psnr), dapi_psnr_std=np.std(dapi_psnr),
-            panck_psnr_mean=np.mean(panck_psnr), panck_psnr_std=np.std(panck_psnr),
-            cd3_psnr_mean=np.mean(cd3_psnr), cd3_psnr_std=np.std(cd3_psnr),
-            average_psnr_mean=np.mean(avg_psnr), average_psnr_std=np.std(avg_psnr)
+            dapi_ssim_mean=safe_mean(dapi_ssim), dapi_ssim_std=safe_std(dapi_ssim),
+            panck_ssim_mean=safe_mean(panck_ssim), panck_ssim_std=safe_std(panck_ssim),
+            cd3_ssim_mean=safe_mean(cd3_ssim), cd3_ssim_std=safe_std(cd3_ssim),
+            average_ssim_mean=safe_mean(avg_ssim), average_ssim_std=safe_std(avg_ssim),
+            dapi_pearson_mean=safe_mean(dapi_pearson), dapi_pearson_std=safe_std(dapi_pearson),
+            panck_pearson_mean=safe_mean(panck_pearson), panck_pearson_std=safe_std(panck_pearson),
+            cd3_pearson_mean=safe_mean(cd3_pearson), cd3_pearson_std=safe_std(cd3_pearson),
+            average_pearson_mean=safe_mean(avg_pearson), average_pearson_std=safe_std(avg_pearson),
+            dapi_psnr_mean=safe_mean(dapi_psnr), dapi_psnr_std=safe_std(dapi_psnr),
+            panck_psnr_mean=safe_mean(panck_psnr), panck_psnr_std=safe_std(panck_psnr),
+            cd3_psnr_mean=safe_mean(cd3_psnr), cd3_psnr_std=safe_std(cd3_psnr),
+            average_psnr_mean=safe_mean(avg_psnr), average_psnr_std=safe_std(avg_psnr)
         )
 
 

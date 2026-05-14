@@ -22,8 +22,10 @@ model:
     num_layers: 3
 
   # Loss weights
-  lambda_L1: 100.0
-  lambda_perceptual: 10.0
+  # lambda_L1: 100.0
+  # lambda_perceptual: 10.0
+  lambda_L1: 10.0
+  lambda_perceptual: 1.0
 
 data:
   num_workers: 4
