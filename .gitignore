@@ -9,3 +9,10 @@ __pycache__/
 .ipynb_checkpoints/
 *.pth
 autodl-tmp/
+*.pth
+*.pt
+__pycache__/
+.ipynb_checkpoints/
+*.pth
+*.tif
+*.tiff

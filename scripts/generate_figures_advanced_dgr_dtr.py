@@ -91,14 +91,14 @@ def main():
         else:
             model_input = input_img
 
-        # [显存修复]：使用 for 循环将 batch=8 拆开，每次只推理 1 张，绕过 Attention 显存峰值
+        # [GPU Memory Fix] Split batch=8 with a for loop, infer 1 image at a time to bypass Attention peak memory usage
         fake_imgs = []
         for i in range(model_input.size(0)):
-            single_input = model_input[i:i+1]  # 取出单张图片，保持 [1, C, H, W] 维度
-            single_fake = netG(single_input)   # 单张推理，释放峰值显存
+            single_input = model_input[i:i+1]  # Extract single image, keep [1, C, H, W] dimension
+            single_fake = netG(single_input)   # Infer single image to release peak GPU memory
             fake_imgs.append(single_fake)
         
-        # 将生成的 8 张单图重新拼回一个 Batch [8, C, H, W]
+        # Reassemble the 8 generated single images back into a Batch [8, C, H, W]
         fake_img = torch.cat(fake_imgs, dim=0)
 
     # 4. Stitch and save images

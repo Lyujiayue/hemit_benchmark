@@ -44,7 +44,7 @@ def main():
     with open(args.config) as f:
         config = yaml.safe_load(f)
 
-    # 用 Batch Size 1 遍历测试集，方便精确定位单张图
+    # Traverse the test set with Batch Size 1 to accurately locate single images
     dataloaders = create_data_loaders(
         data_root=args.data_root,
         batch_size=1, 
@@ -91,16 +91,16 @@ def main():
 
             fake_img = netG(model_input)
             
-            # 兼容 DGR 还原到 [0,1] 算误差
+            # Compatible with DGR: restore to [0,1] for error calculation
             if arch in ['dgr', 'dgr_dtr']:
                 fake_img_for_loss = torch.clamp((fake_img + 1.0) / 2.0, 0.0, 1.0)
             else:
                 fake_img_for_loss = fake_img
 
-            # 计算绝对误差
+            # Calculate absolute error
             loss = criterion(fake_img_for_loss, label_img).item()
             
-            # 把数据存起来
+            # Store the data
             error_list.append({
                 'loss': loss,
                 'filename': batch['filename'][0],
@@ -109,17 +109,17 @@ def main():
                 'label': label_img.cpu()
             })
 
-    # 根据 loss 从大到小排序（误差越大的排越前面）
+    # Sort by loss from largest to smallest (higher error comes first)
     error_list.sort(key=lambda x: x['loss'], reverse=True)
 
-    # 提取最差的 N 张图
+    # Extract the worst N images
     worst_cases = error_list[:args.num_failures]
     
     print(f"\nFound Top {args.num_failures} Failure Cases:")
     for i, item in enumerate(worst_cases):
         print(f"Rank {i+1} | File: {item['filename']} | L1 Error: {item['loss']:.2f}")
 
-    # 拼接并保存
+    # Concatenate and save
     inputs = torch.cat([item['input'] for item in worst_cases])
     fakes = torch.cat([item['fake'] for item in worst_cases])
     labels = torch.cat([item['label'] for item in worst_cases])

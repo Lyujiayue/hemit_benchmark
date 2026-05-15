@@ -1,3 +1,4 @@
+```python
 import os
 import torch
 import torchvision.utils as vutils
@@ -7,13 +8,13 @@ from pathlib import Path
 from tqdm import tqdm
 
 def prepare_tensor(img_path):
-    """读取图像并转换为 torchvision 要求的 Tensor 格式 (C, H, W)，归一化到 [0,1]"""
-    # 使用 imread 处理 .tif 或 .png
+    """Read image and convert to Tensor format (C, H, W) required by torchvision, normalize to [0,1]"""
+    # Use imread to process .tif or .png files
     img = imread(str(img_path))
-    # 确保是 RGB
-    if len(img.shape) == 2: # 灰度图转 RGB
+    # Ensure it is RGB
+    if len(img.shape) == 2: # Convert grayscale to RGB
         img = img[:, :, np.newaxis].repeat(3, axis=2)
-    elif img.shape[2] == 4: # RGBA 转 RGB
+    elif img.shape[2] == 4: # Convert RGBA to RGB
         img = img[:, :, :3]
         
     tensor = torch.from_numpy(img).permute(2, 0, 1).float()
@@ -22,35 +23,35 @@ def prepare_tensor(img_path):
     return tensor
 
 def main():
-    # ======= 1. 路径设置 =======
-    # DTR 预测图路径
+    # ======= 1. Path Configuration =======
+    # DTR prediction image path
     pred_dir = Path("/root/hemit_benchmark/models/advanced/dtr/dtr_preds")
-    # 原始数据集路径 (用于找 Input 和 Ground Truth)
+    # Original dataset path (used to find Input and Ground Truth)
     input_dir = Path("/root/autodl-tmp/test/input")
     label_dir = Path("/root/autodl-tmp/test/label")
     
     output_dir = Path("/root/hemit_benchmark/report_figures")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # ======= 2. 获取预测文件并选择前 8 个作为展示 =======
-    # 查找所有的 .tif 或 .png 文件
+    # ======= 2. Get prediction files and select the first 8 for display =======
+    # Find all .tif or .png files
     all_preds = sorted([f for f in pred_dir.iterdir() if f.suffix in ['.tif', '.png', '.jpg']])
     
     if not all_preds:
-        print(f"❌ Error: 在 {pred_dir} 中没找到预测图片！")
+        print(f"❌ Error: No prediction images found in {pred_dir}!")
         return
 
-    # 选择前 8 个进行展示
+    # Select the first 8 for display
     selected_preds = all_preds[:8]
 
     inputs_list, fakes_list, reals_list = [], [], []
 
-    # ======= 3. 跨文件夹匹配图像 =======
+    # ======= 3. Match images across folders =======
     print("🔍 Matching images from different directories...")
     for pred_path in tqdm(selected_preds):
-        base_name = pred_path.name # 文件名，例如 137_1855.png
+        base_name = pred_path.name # File name, e.g., 137_1855.png
         
-        # 对应的输入和标签路径
+        # Corresponding input and label paths
         in_path = input_dir / base_name
         gt_path = label_dir / base_name
         
@@ -65,37 +66,38 @@ def main():
             print(f"⚠️ Missing pairs for {base_name}, skipping.")
 
     if not inputs_list:
-        print("❌ Error: 没有成功加载任何图像组，请检查文件名是否匹配。")
+        print("❌ Error: No image groups loaded successfully, please check if the filenames match.")
         return
 
-    # ======= 4. 堆叠为 Batch Tensors =======
+    # ======= 4. Stack into Batch Tensors =======
     inputs_tensor = torch.stack(inputs_list)
     fakes_tensor = torch.stack(fakes_list)
     reals_tensor = torch.stack(reals_list)
 
-    # ======= 5. 创建网格 (2x4 布局) =======
+    # ======= 5. Create grid (2x4 layout) =======
     grid_inputs = vutils.make_grid(inputs_tensor, nrow=4, padding=4)
     grid_fakes = vutils.make_grid(fakes_tensor, nrow=4, padding=4)
     grid_reals = vutils.make_grid(reals_tensor, nrow=4, padding=4)
 
-    # ======= 6. 使用 Matplotlib 拼装大图 =======
+    # ======= 6. Assemble large image using Matplotlib =======
     fig, axes = plt.subplots(1, 3, figsize=(20, 6))
     plt.subplots_adjust(wspace=0.05)
 
-    # 设置标题 (对应 DTR 任务)
-    titles = ['Input (H&E Image)', 'DTR Prediction (PAS)', 'Ground Truth (PAS)']
+    # Set titles (corresponding to DTR task)
+    titles = ['Input (H&E Image)', 'Fake (Predicted mIHC)', 'Real (Ground Truth)']
     grids = [grid_inputs, grid_fakes, grid_reals]
 
     for i in range(3):
         img_np = grids[i].permute(1, 2, 0).numpy()
         axes[i].imshow(img_np)
-        axes[i].set_title(titles[i], fontsize=18, pad=15, fontweight='bold')
+        axes[i].set_title(titles[i], fontsize=18, pad=10)
         axes[i].axis('off')
 
-    # ======= 7. 保存高清大图 =======
+    # ======= 7. Save high-definition large image =======
     output_path = output_dir / "DTR_PaperStyle_Comparison.png"
     plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
     print(f"✅ Success! DTR layout saved to: {output_path}")
 
 if __name__ == "__main__":
     main()
+```

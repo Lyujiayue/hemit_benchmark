@@ -90,13 +90,13 @@ def main():
     fig, axes = plt.subplots(1, 3, figsize=(20, 4)) # Slightly lower the height to fit 1 row
     plt.subplots_adjust(wspace=0.02)
 
-    titles = ['Input (H&E Input)', 'Failure Pred (mIHC)', 'Real (Ground Truth)']
+    titles = ['Input (H&E Input)', 'Fake (Predicted mIHC)', 'Real (Ground Truth)']
     grids = [grid_inputs, grid_fakes, grid_reals]
 
     for i in range(3):
         img_np = grids[i].permute(1, 2, 0).numpy()
         axes[i].imshow(img_np)
-        axes[i].set_title(titles[i], fontsize=18, fontweight='bold', color='darkred' if i==1 else 'black', pad=10)
+        axes[i].set_title(titles[i], fontsize=18, pad=10)
         axes[i].axis('off')
 
     # 8. Save high-definition large image
