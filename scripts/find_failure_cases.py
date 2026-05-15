@@ -49,6 +49,7 @@ def main():
         data_root=args.data_root,
         batch_size=1, 
         num_workers=4,
+        patch_size=256, # for advanced baselines, to avoid OOM
         use_augmentation=False
     )
     test_loader = dataloaders['test']
