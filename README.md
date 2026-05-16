@@ -8,11 +8,11 @@ This framework implements multiple baseline and state-of-the-art methods for vir
 
 | Method | Type | Reference |
 |--------|------|-----------|
-| pix2pix (U-Net) | Classic (Self-trained weights) | \ |
+| pix2pix (U-Net) | Classic (Self-trained weights) | Isola et al., CVPR 2017 |
 | Dual-Branch Pix2pix | Classic (Pre-trained weights reproduction) | Bian et al., arXiv:2403.18501 |
-| DTR | Advanced (Pre-trained weights reproduction) | \ |
-| DGR/DTR | Advanced (Self-trained weights) | \ |
-| MIPHEI-ViT | Advanced (Pre-trained weights reproduction)| Balezo et al., Computers in Biology and Medicine, 2026 |
+| DTR(official) | Advanced (Pre-trained weights reproduction) | Ma et al., arXiv:2509.14119 |
+| DGR/DTR | Advanced (Self-trained weights) | Ma et al., arXiv:2509.14119 |
+| MIPHEI-ViT | Advanced (Pre-trained weights reproduction)| Balezo et al., Comput. Biol. Med., 2026 |
 
 **Task**: Translate H&E stained images → 3-channel mIHC images (DAPI, panCK, CD3)
 
@@ -123,7 +123,7 @@ For other pretrained baselines, run the following standalone script from the roo
 # Dual-Branch
 python utils/run_metrics_dual.py
 
-# DTR
+# DTR (official)
 python utils/run_metrics_dtr.py
 
 # MIPHEI-ViT
@@ -163,7 +163,7 @@ python scripts/find_failure_cases_dual.py
 ```
 
 ```bash
-# DTR
+# DTR(official)
 python scripts/generate_figures_dtr.py
 python scripts/find_failure_cases_dtr.py
 ```
