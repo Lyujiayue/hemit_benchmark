@@ -1,0 +1,8 @@
+# model configuration:
+# used in model factory get_generator
+model_name: "unet"  # Model name
+dropout: 0.1  # Dropout rate for regularization
+checkpoint_path: null  # Path to model checkpoint
+encoder:  # Encoder configuration
+  encoder_name: mobilenet_v2  # Name of the encoder model
+  encoder_weights: imagenet  # Weights for the encoder model

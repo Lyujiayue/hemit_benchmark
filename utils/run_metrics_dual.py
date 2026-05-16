@@ -1,29 +1,29 @@
 import os
-# 因为 run_metrics_dual.py 和 evaluation_metrics.py 在同一个 utils 文件夹下，直接导入即可
+# Since run_metrics_dual.py and evaluation_metrics.py are in the same utils folder, direct import is supported
 from evaluation_metrics import HEMITEvaluator, print_metrics_table
 
 def main():
-    # 1. 设置输出 CSV 和结果的目录（建议放在工程根目录的 metrics_output 下保持整洁）
+    # 1. Set the directory for output CSV and results (recommended to be placed under metrics_output in the project root for cleanliness)
     output_dir = "/root/hemit_benchmark/metrics_output"
     os.makedirs(output_dir, exist_ok=True)
     evaluator = HEMITEvaluator(output_dir=output_dir)
 
-    # 2. 指定预测结果所在的目录
-    # 注意：Dual-branch 跑完后，real_B(真实标签)和 fake_B(预测图)都在这个文件夹里
+    # 2. Specify the directory where the prediction results are located
+    # Note: After Dual-branch runs, both real_B (ground truth labels) and fake_B (predictions) are in this folder
     results_dir = "/root/hemit_benchmark/models/baselines/dual_branch_pix2pix/results/pretrained_hemit/test_latest/images"
 
-    print("🚀 开始读取图像并计算指标 (SSIM, Pearson R, PSNR)...")
+    print("🚀 Starting to read images and calculate metrics (SSIM, Pearson R, PSNR)...")
     
-    # 3. 运行评测
+    # 3. Run evaluation
     image_metrics, aggregate = evaluator.evaluate_from_directory(
-        real_dir=results_dir,  # 找 real_B 
-        fake_dir=results_dir,  # 找 fake_B
+        real_dir=results_dir,  # Look for real_B
+        fake_dir=results_dir,  # Look for fake_B
         output_csv=os.path.join(output_dir, "dual_branch_results.csv")
     )
 
-    # 4. 打印可以复制到报告里的 Markdown 表格
+    # 4. Print a Markdown table that can be copied directly into the report
     print_metrics_table(aggregate, method_name="Official Dual-Branch (Pretrained)")
-    print(f"✅ 评测完成！详细结果已保存至: {output_dir}/dual_branch_results.csv")
+    print(f"✅ Evaluation complete! Detailed results saved to: {output_dir}/dual_branch_results.csv")
 
 if __name__ == "__main__":
     main()

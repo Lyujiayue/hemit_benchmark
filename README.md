@@ -8,10 +8,11 @@ This framework implements multiple baseline and state-of-the-art methods for vir
 
 | Method | Type | Reference |
 |--------|------|-----------|
-| pix2pix (U-Net) | Classic cGAN | Isola et al., CVPR 2017 |
-| pix2pix (ResNet) | Classic cGAN | Isola et al., CVPR 2017 |
-| Dual-Branch Pix2pix | Paper method | Bian et al., arXiv:2403.18501 |
-| DGR/DTR | Advanced (misalignment-robust) | Ma et al., arXiv:2509.14119 |
+| pix2pix (U-Net) | Classic (Self-trained weights) | \ |
+| Dual-Branch Pix2pix | Classic (Pre-trained weights reproduction) | Bian et al., arXiv:2403.18501 |
+| DTR | Advanced (Pre-trained weights reproduction) | \ |
+| DGR/DTR | Advanced (Self-trained weights) | \ |
+| MIPHEI-ViT | Advanced (Pre-trained weights reproduction)| Balezo et al., Computers in Biology and Medicine, 2026 |
 
 **Task**: Translate H&E stained images → 3-channel mIHC images (DAPI, panCK, CD3)
 
@@ -31,7 +32,7 @@ Download from: [Mendeley HEMIT Dataset](https://data.mendeley.com/datasets/3gx53
 
 - **Image size**: 1024×1024 pixels
 - **Format**: TIFF
-- **Input**: Grayscale H&E (1 channel)
+- **Input**: H&E stained images (3 channel, RGB)
 - **Output**: mIHC (3 channels: DAPI, panCK, CD3)
 - **Random seed**: 42
 
@@ -48,15 +49,8 @@ pip install -r requirements.txt
 ### Option 2: conda
 
 ```bash
-conda env create -f environment.yml
+conda env create -f environment.yaml
 conda activate hemit_benchmark
-```
-
-### Option 3: Docker
-
-```bash
-docker build -t hemit_benchmark .
-docker run --gpus all -it hemit_benchmark
 ```
 
 ---
@@ -67,7 +61,7 @@ docker run --gpus all -it hemit_benchmark
 
 Download from the Mendeley link above and organize as:
 
-```
+```text
 HEMIT/
 ├── train/
 │   ├── input/   (*.tif)
@@ -84,100 +78,135 @@ HEMIT/
 
 ```bash
 python scripts/prepare_data.py \
-    --data_path /path/to/HEMIT \
-    --output_path ./data_prep \
-    --num_vis_samples 8
+    --data_root /path/to/HEMIT \
+    --output_dir ./data_prep \
+    --num_visualizations 8
 ```
 
-This checks:
-- File counts per split
-- Image sizes (1024×1024)
-- Channel counts (input: 1, label: 3)
-- Pixel value ranges
-- Input/label filename matching
+This script checks:
+- **File counts per split** (Checks if sample counts match expectations)
+- **Image sizes** (Validates 1024×1024 resolution for both inputs and labels)
+- **Channel counts** (Ensures input is 1 or 3 channels, and label is exactly 3 channels: DAPI, panCK, CD3)
+- **Pixel value ranges** (Computes min/max/mean/std global statistics)
+- **Input/label filename matching** (Ensures every input image has a corresponding label)
 
 And generates:
-- `data_report.json`
-- `visualizations/` (input/label comparison images)
+- `validation_report.txt` (Human-readable data integrity report)
+- `channel_statistics.json` (Detailed intensity statistics for each mIHC channel)
+- `split_documentation.json` (List of file names belonging to train/val/test splits)
+- `visualization_{split}.png` (Input/Label multi-channel comparison images for visual inspection)
+- `distribution_{split}.png` (Pixel intensity distribution histograms for each channel)
 
 ### 3. Train a Model
 
 ```bash
 # pix2pix U-Net
-python scripts/train.py \
+python scripts/train_pix2pix.py \
     --config configs/pix2pix_unet.yaml \
     --data_root /path/to/HEMIT \
-    --exp_name pix2pix_unet
+    --exp_name pix2pix_unet_baseline 
 
-# Dual-Branch (HEMIT paper)
-python scripts/train.py \
-    --config configs/dual_branch.yaml \
+# DGR/DTR
+python scripts/train_dgr_dtr.py \
+    --config configs/dgr_dtr.yaml \
     --data_root /path/to/HEMIT \
-    --exp_name dual_branch
-
-# DGR
-python scripts/train.py \
-    --config configs/dgr.yaml \
-    --data_root /path/to/HEMIT \
-    --exp_name dgr
+    --exp_name dgr_dtr_baseline
 ```
 
-### 4. Evaluate
+### 4. Quantitative Evaluation
+
+> 💡 **Note**: For `pix2pix` and `DGR/DTR`, metric results are computed and printed automatically during the training phase (see the corresponding `train` method).
+
+For other pretrained baselines, run the following standalone script from the root directory:
 
 ```bash
-python scripts/evaluate.py \
+# Dual-Branch
+python utils/run_metrics_dual.py
+
+# DTR
+python utils/run_metrics_dtr.py
+
+# MIPHEI-ViT
+python utils/run_metrics_vit.py
+```
+
+---
+
+### 5. Figures Evaluation (Inference Figures / Failure Cases)
+
+```bash
+# pix2pix
+python scripts/generate_figures_baselines.py
+python scripts/mine_failures.py \
     --config configs/pix2pix_unet.yaml \
-    --checkpoint experiments/pix2pix_unet/checkpoints/best.pth \
+    --ckpt ./experiments/pix2pix_unet_baseline/checkpoints/best.pth \
     --data_root /path/to/HEMIT \
-    --split test \
-    --output_dir ./results
+    --output_dir ./report_figures \
+    --num_failures 4
 ```
 
-### 5. Run Full Benchmark
+```bash
+# DGR/DTR
+python scripts/generate_figures_advanced_dgr_dtr.py
+python scripts/mine_failures.py \
+    --config configs/dgr_dtr.yaml \
+    --ckpt ./experiments/dgr_dtr_baseline/checkpoints/best.pth \
+    --data_root /path/to/HEMIT \
+    --output_dir ./report_figures \
+    --num_failures 4
+```
 
 ```bash
-python run_benchmark.py \
-    --data_root /path/to/HEMIT \
-    --method all
+# Dual-Branch
+python scripts/generate_figures_dual.py
+python scripts/find_failure_cases_dual.py
+```
+
+```bash
+# DTR
+python scripts/generate_figures_dtr.py
+python scripts/find_failure_cases_dtr.py
+```
+
+```bash
+# MIPHEI-ViT
+python scripts/generate_figures_vit.py
+python scripts/find_failure_cases_vit.py
 ```
 
 ---
 
 ## Project Structure
 
-```
-hemit_benchmark/
-├── configs/               # YAML configs for each method
-│   ├── pix2pix_unet.yaml
-│   ├── pix2pix_resnet.yaml
-│   ├── dual_branch.yaml
-│   └── dgr.yaml
-├── data/                  # Data loading
-│   ├── __init__.py
-│   └── dataset.py         # HEMITDataset, HEMITDataValidator
-├── models/                # Model implementations
-│   ├── baselines/
-│   │   ├── __init__.py
-│   │   ├── pix2pix.py     # UNet, ResNet, SwinT-ResNet generators + PatchGAN
-│   │   └── dual_branch.py # Dual-Branch generator + discriminator
-│   └── advanced/
-│       ├── __init__.py
-│       └── dgr.py         # DGR generator + discriminator + inference
-├── utils/
-│   ├── __init__.py
-│   └── metrics.py         # SSIM, Pearson R, PSNR + aggregation
-├── scripts/
-│   ├── prepare_data.py    # Data validation & visualization
-│   ├── train.py           # Unified training script
-│   ├── evaluate.py        # Inference & evaluation
-│   └── train_pix2pix.py   # Standalone pix2pix trainer
-├── experiments/           # Training logs, checkpoints, visualizations
-├── results/               # Evaluation results
-├── run_benchmark.py       # One-command benchmark runner
-├── requirements.txt
-├── environment.yml
-├── Dockerfile
-└── README.md
+```text
+/root/hemit_benchmark
+├── configs
+├── data
+│   └── __pycache__
+├── data_exploration
+├── experiments
+│   ├── dgr_dtr_baseline
+│   │   ├── checkpoints
+│   │   ├── logs
+│   │   └── visualizations
+│   └── pix2pix_unet_baseline
+│       ├── checkpoints
+│       ├── logs
+│       └── visualizations
+├── models
+│   ├── __pycache__
+│   ├── advanced
+│   │   ├── MIPHEI-ViT             # git clone MIPHEI-ViT repo here
+│   │   ├── __pycache__
+│   │   └── dtr                    # git clone DTR repo here
+│   └── baselines
+│       ├── __pycache__
+│       └── dual_branch_pix2pix    # git clone Dual-Branch repo here
+├── report_figures
+├── results
+├── scripts
+└── utils
+    └── __pycache__
 ```
 
 ---
@@ -187,85 +216,29 @@ hemit_benchmark/
 | Method | Download | Notes |
 |--------|----------|-------|
 | Dual-Branch (HEMIT) | [Google Drive](https://drive.google.com/file/d/1HNc-dj2ATN7gdAyOCy-lWe8_YQse2CTd/view) | From original paper repo |
-| DGR (HEMIT) | [GitHub Release](https://github.com/birkhoffkiki/DTR/releases/download/weights/hemit_weight.pth) | Pretrained by DTR authors |
+| DTR (HEMIT) | [GitHub Release](https://github.com/birkhoffkiki/DTR/releases/download/weights/hemit_weight.pth) | Pretrained by DTR authors |
 
-Download and place in `checkpoints/` directory.
-
----
-
-## Training Configuration Summary
-
-| Parameter | pix2pix | Dual-Branch | DGR |
-|-----------|---------|-------------|-----|
-| Batch size | 2 | 2 | 2 |
-| Learning rate | 2e-4 | 3e-5 | 2e-4 |
-| λ_L1 | 100 | 30 | 100 |
-| Epochs | 100 | 80 | 100 |
-| LR schedule | step@50 | step@30 | step@50 |
-| Generator | UNet/ResNet | Dual-Branch | DGR |
-
----
-
-## Results Table Format
-
-Final results are reported as:
-
-```
-| Metric | DAPI | panCK | CD3 | Average |
-|--------|------|-------|-----|---------|
-| SSIM   | ...  | ...   | ... | ...     |
-| Pearson| ...  | ...   | ... | ...     |
-| PSNR   | ...  | ...   | ... | ...     |
-```
-
-Both **mean ± std** are reported across all test images.
-
----
-
-## Key Design Decisions
-
-### Multi-channel Output
-All methods output 3-channel mIHC images directly. The discriminator receives the concatenation of the generated image and the input H&E image as conditioning (4-channel input for PatchGAN).
-
-### Data Normalization
-- H&E input: normalized to [0, 1] per-image (min-max)
-- mIHC label: normalized to [0, 1] per-image (min-max)
-- Model operates in [-1, 1] range via Tanh output
-
-### Evaluation
-Metrics are computed per-channel (DAPI, panCK, CD3) and averaged. The `TINY=1e-15` constant is added to avoid numerical issues in Pearson correlation computation.
-
----
-
-## Hardware Requirements
-
-| Configuration | GPU Memory | Notes |
-|---------------|-----------|-------|
-| Min (1024×1024, batch=1) | ~8 GB | Slow training |
-| Recommended (batch=2) | ~16 GB | Good balance |
-| Optimal (batch=4, gradient checkpointing) | ~24 GB | Fast training |
-
----
-
-## Troubleshooting
-
-### Out of Memory on 1024×1024 images
-- Reduce batch size to 1
-- Enable gradient checkpointing (coming soon)
-- Use patch-based training with smaller patches
-
-### Dataset not found
-- Ensure directory structure matches: `HEMIT/{train,val,test}/{input,label}/`
-- Check that `.tif` files exist in both `input/` and `label/` directories
-
-### Pretrained weight download fails
-- Use `wget` or browser for Google Drive links
-- For DGR: direct GitHub URL should work reliably
+Download and place weights into the corresponding experiment `checkpoints/` directory.
 
 ---
 
 ## References
 
-1. Isola et al., "Image-to-Image Translation with Conditional Adversarial Networks", CVPR 2017.
-2. Bian et al., "HEMIT: H&E to Multiplex-immunohistochemistry Image Translation with Dual-Branch Pix2pix Generator", arXiv:2403.18501, 2024.
-3. Ma et al., "Generative AI for Misalignment-Resistant Virtual Staining to Accelerate Histopathology Workflows", arXiv:2509.14119, 2024.
+This repository is built upon the following pioneering research works and open-source projects. We sincerely thank the authors for their wonderful contributions to the community:
+
+1. **HEMIT-DATASET**
+   * Repository: [BianChang/HEMIT-DATASET](https://github.com/BianChang/HEMIT-DATASET)
+   * Description: Official dataset repository for H&E to mIHC image translation benchmark.
+
+2. **Pix2pix_DualBranch**
+   * Repository: [BianChang/Pix2pix_DualBranch](https://github.com/BianChang/Pix2pix_DualBranch)
+   * Description: Baseline framework for the dual-branch image-to-image translation architecture.
+
+3. **DTR**
+   * Repository: [birkhoffkiki/DTR](https://github.com/birkhoffkiki/DTR)
+   * Description: Core implementation related to token/feature resolution or advanced generative baselines.
+
+4. **MIPHEI-ViT**
+   * Repository: [Sanofi-Public/MIPHEI-ViT](https://github.com/Sanofi-Public/MIPHEI-ViT)
+   * Citation: *Balezo et al., MIPHEI-ViT: Multiplex immunofluorescence prediction from H&E images using ViT foundation models, Computers in Biology and Medicine, 2026.*
+

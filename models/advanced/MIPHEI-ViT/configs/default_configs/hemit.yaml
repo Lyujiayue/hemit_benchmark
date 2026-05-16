@@ -1,0 +1,20 @@
+# @package _global_
+defaults:
+  - override /train: cell
+
+data:
+  augmentation_dir: /root/autodl-tmp
+  test_dataframe_path: "/root/hemit_benchmark/models/advanced/MIPHEI-ViT/test_dataframe.csv"
+  slide_dataframe_path: "/root/hemit_benchmark/models/advanced/MIPHEI-ViT/slide_dataframe.csv"
+
+train:
+  epochs: 20
+  batch_size: 4
+  data_sampler:
+    use_sampler: False
+  gan_train: false
+  wandb_note: "model_hemit"
+
+model:
+  model_name: "hemit"
+  encoder_weights: /root/hemit_benchmark/models/advanced/MIPHEI-ViT/MIPHEI-vit/model.safetensors

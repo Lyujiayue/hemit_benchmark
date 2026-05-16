@@ -41,7 +41,7 @@ class HEMITDataset(Dataset):
     """
     HEMIT Dataset for H&E to mIHC translation.
 
-    Input: H&E stained images (1 or 3 channel)
+    Input: H&E stained images (3 channel)
     Output: mIHC images (3 channel: DAPI, panCK, CD3)
     """
 

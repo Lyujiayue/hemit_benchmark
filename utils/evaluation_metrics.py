@@ -261,13 +261,13 @@ class MetricsCalculator:
         num_samples = len(image_metrics)
 
         # ---------------------------------------------------------
-        # [安全补丁] 定义过滤 nan 和 inf 的计算函数
-        # 这样可以确保如果遇到全黑图导致的脏数据，自动跳过它计算剩余图的均值
+        # [Safety Patch] Define calculation functions to filter NaN and INF
+        # Ensures dirty data caused by all-black images is skipped when calculating averages for remaining images
         # ---------------------------------------------------------
         def safe_mean(vals):
             arr = np.array(vals, dtype=np.float64)
-            arr[np.isinf(arr)] = np.nan  # 将所有的无穷大转换为 nan
-            # 如果全是 nan (极端情况)，返回 0，否则返回忽略 nan 后的平均值
+            arr[np.isinf(arr)] = np.nan  # Convert all infinities to nan
+            # Return 0 if all values are nan (extreme case), otherwise return the average ignoring nan
             return float(np.nanmean(arr)) if not np.all(np.isnan(arr)) else 0.0
 
         def safe_std(vals):
@@ -323,28 +323,28 @@ class HEMITEvaluator:
         self.calculator = MetricsCalculator()
 
     def evaluate_from_directory(self, real_dir: str, fake_dir: str, output_csv: Optional[str] = None) -> Tuple[List[ImageMetrics], AggregateMetrics]:
-        from skimage.io import imread # 使用 skimage 兼容更多格式
+        from skimage.io import imread # Use skimage for compatibility with more formats
         
         real_dir = Path(real_dir)
         fake_dir = Path(fake_dir)
 
-        # 兼容 .tif 和 .png 两种可能的输出格式
+        # Support both .tif and .png output formats
         fake_files = list(fake_dir.glob('*_fake_B.*')) 
         if not fake_files:
             fake_files = list(fake_dir.glob('fake_B_*.*'))
             
-        # 过滤掉非图片文件
+        # Filter non-image files
         fake_files = sorted([f for f in fake_files if f.suffix.lower() in ['.tif', '.png', '.jpg']])
 
         if len(fake_files) == 0:
-            print(f"❌ 警告：在 {fake_dir} 下没有找到任何符合命名规则的预测图片！请检查路径或生成结果。")
+            print(f"❌ Warning: No predicted images found in {fake_dir} matching the naming pattern! Please check the path or generated results.")
             return [], self.calculator.aggregate_metrics([])
 
         image_metrics = []
         for fake_file in fake_files:
-            ext = fake_file.suffix # 动态获取后缀名
+            ext = fake_file.suffix # Dynamically get the file extension
             
-            # 动态匹配文件名
+            # Dynamically match filenames
             if '_fake_B' in fake_file.name:
                 base_name = fake_file.name.replace(f'_fake_B{ext}', '')
                 real_file = real_dir / f'{base_name}_real_B{ext}'
@@ -353,10 +353,10 @@ class HEMITEvaluator:
                 real_file = real_dir / f'real_B_{base_name}{ext}'
 
             if not real_file.exists():
-                print(f"Warning: 找不到对应的真实标签图 {real_file}")
+                print(f"Warning: Corresponding ground truth image not found {real_file}")
                 continue
 
-            # 读取图像
+            # Read images
             real_img = imread(str(real_file))
             fake_img = imread(str(fake_file))
 

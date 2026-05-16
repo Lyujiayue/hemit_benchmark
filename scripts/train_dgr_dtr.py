@@ -108,7 +108,7 @@ class DTRTrainer:
             label_img = batch['label'].to(self.device)
 
             fake_img = self.model.inference(input_img)
-            # fake_img from [-1, 1] to [0, 1]
+            # Convert fake_img from [-1, 1] to [0, 1]
             fake_img = (fake_img + 1.0) / 2.0
             fake_img = torch.clamp(fake_img, 0.0, 1.0)
 
@@ -144,14 +144,13 @@ class DTRTrainer:
         self.writer.add_image('val/fake_mIHC', fake_grid, step)
         self.writer.add_image('val/real_mIHC', real_grid, step)
 
-        # 在 visualize_batch 结尾加上这三行
         
         vutils.save_image(inp_grid, self.vis_dir / f'epoch_{step:04d}_input.png')
         vutils.save_image(fake_grid, self.vis_dir / f'epoch_{step:04d}_fake.png')
         vutils.save_image(real_grid, self.vis_dir / f'epoch_{step:04d}_real.png')
 
     def load_checkpoint(self, ckpt_path: str):
-        """修复：恢复断点续传核心逻辑"""
+        """Fix: Core logic for resuming training from checkpoint"""
         print(f"[DTRTrainer] Loading checkpoint from {ckpt_path}...")
         ckpt = torch.load(ckpt_path, map_location=self.device, weights_only=False)
         self.model.load_state_dict(ckpt['model_state_dict'])
@@ -207,7 +206,7 @@ class DTRTrainer:
 
                 pbar.set_postfix({'G': f"{losses['loss_G']:.3f}", 'D': f"{losses['loss_D']:.3f}"})
 
-            # 修复：补充 Epoch 结束时的终端汇总输出，和 train.py 保持完全一致
+            # Fix: Add terminal summary output at the end of epoch, keep consistent with train.py
             avg = {k: np.mean(v) for k, v in epoch_losses.items()}
             print(f"Epoch {epoch}: G={avg['loss_G']:.4f} | D={avg['loss_D']:.4f} "
                   f"| L1={avg['loss_L1']:.4f} | Perceptual={avg['loss_perceptual']:.4f}")
@@ -255,7 +254,7 @@ def main():
     parser.add_argument('--data_root', type=str, required=True)
     parser.add_argument('--exp_name', type=str, required=True)
     parser.add_argument('--seed', type=int, default=42)
-    parser.add_argument('--resume', type=str, default=None)  # 修复：补充断点续传参数
+    parser.add_argument('--resume', type=str, default=None)  # Fix: Add checkpoint resuming parameter
     args = parser.parse_args()
 
     set_seed(args.seed)
@@ -273,7 +272,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     trainer = DTRTrainer(config=config, experiment_name=args.exp_name, device=device)
 
-    # 修复：检测并触发断点加载
+    # Fix: Detect and trigger checkpoint loading
     if args.resume:
         trainer.load_checkpoint(args.resume)
 
